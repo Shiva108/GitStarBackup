@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 
+# Written in python 3.5
+# curl "https://api.github.com/users/shiva108/starred?page=1&per_page=10000" | grep -e 'git_url*' | cut -d \" -f 4 |   xargs -L1 git clone
+
 try:
     from git import Repo
     import requests
     import json
     import multiprocessing
+    import threading
     import os
     import argparse
 except ImportError.args as e:
@@ -27,9 +31,10 @@ def my_funky_clone(url):
 
 
 def main():
+    global starred_repos
     try:
         # Arguments
-        parser = argparse.ArgumentParser(description='Get Github Starred Repos - gitgitstar.py')
+        parser = argparse.ArgumentParser(description='Get Github Starred Repos - getgitstar.py')
         parser.add_argument("name", help='Name of Github user eg. Shiva108')
         args = parser.parse_args()
         # Variables
@@ -37,21 +42,17 @@ def main():
         url = 'https://api.github.com/users/' + name + '/starred?page=1&per_page=10000'
         # print(url)
         starred_repos = json.loads(requests.get(url).text)
-        # print(starred_repos)
+        print(starred_repos)
     except RuntimeError or OSError as e:
         print(e)
-        pass
-    try:
-        cpus = multiprocessing.cpu_count()
-    except NotImplementedError:
-        cpus = 4
-    try:
-        while True:
-            pool = multiprocessing.Pool(processes=cpus)
-            pool.map(my_funky_clone, [i['clone_url'] for i in starred_repos])
-    except KeyboardInterrupt:
+        for i in starred_repos['url']:
+            t = threading.Thread(target=my_funky_clone(), args=url)
+            t.start()
+    except KeyboardInterrupt
         print('Interrupted by user keypress!')
         pass
 
+
 if __name__ == "__main__":
-main()
+    main()
+    
